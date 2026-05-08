@@ -1,0 +1,17 @@
+node_modules
+bazel-out
+.idea
+
+**/.DS_Store
+
+dist/*
+!dist/algebraic-numbers.js
+!dist/algebraic-numbers.bundle-for-browser-min.js
+!dist/algebraic-numbers.bundle-for-browser.js
+!dist/index.js
+
+!dist/runtime
+!dist/sources
+
+!dist/runtime/*
+!dist/sources/*

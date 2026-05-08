@@ -1,0 +1,18 @@
+{
+  "name": "algebraic-numbers",
+  "version": "0.1.0",
+  "description": "Float64 algebraic-number arithmetic using polynomial resultants and root selection.",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "algebrite": "^1.4.0",
+    "flo-poly": "^7.0.2"
+  },
+  "devDependencies": {}
+}
