@@ -1,7 +1,9 @@
 import { allRoots, allRootsCertifiedSimplified } from 'flo-poly';
-import { Complex, C, EPS } from './complex.js';
+import { Complex, C, EPS, ComplexInput } from './complex.js';
 
-function gcd(a, b) {
+export type PolyCoeffs = number[] | bigint[];
+
+function gcd(a: bigint, b: bigint): bigint {
   while (b !== 0n) {
     const t = b;
     b = a % b;
@@ -10,66 +12,66 @@ function gcd(a, b) {
   return a;
 }
 
-export function trimAscending(p, eps = EPS) {
-  const q = p.slice();
+export function trimAscending<T extends PolyCoeffs>(p: T, eps = EPS): T {
+  const q: any[] = p.slice();
   const isBig = typeof q[0] === 'bigint';
   if (isBig) {
     while (q.length > 1 && q[q.length - 1] === 0n) q.pop();
-    return q.length ? q : [0n];
+    return (q.length ? q : [0n]) as T;
   }
   while (q.length > 1 && Math.abs(q[q.length - 1]) <= eps) q.pop();
-  return q.length ? q : [0];
+  return (q.length ? q : [0]) as T;
 }
 
-export function trimDescending(p, eps = EPS) {
-  const q = p.slice();
+export function trimDescending<T extends PolyCoeffs>(p: T, eps = EPS): T {
+  const q: any[] = p.slice();
   const isBig = typeof q[0] === 'bigint';
   if (isBig) {
     while (q.length > 1 && q[0] === 0n) q.shift();
-    return q.length ? q : [0n];
+    return (q.length ? q : [0n]) as T;
   }
   while (q.length > 1 && Math.abs(q[0]) <= eps) q.shift();
-  return q.length ? q : [0];
+  return (q.length ? q : [0]) as T;
 }
 
-export function ascendingToDescending(p) {
-  return trimAscending(p).slice().reverse();
+export function ascendingToDescending<T extends PolyCoeffs>(p: T): T {
+  return trimAscending(p).slice().reverse() as T;
 }
 
-export function descendingToAscending(p) {
-  return trimDescending(p).slice().reverse();
+export function descendingToAscending<T extends PolyCoeffs>(p: T): T {
+  return trimDescending(p).slice().reverse() as T;
 }
 
-export function degree(p) {
+export function degree(p: PolyCoeffs): number {
   return trimAscending(p).length - 1;
 }
 
-export function normalizeAscending(p, eps = EPS) {
-  p = trimAscending(p, eps);
-  if (p.length === 0) return [typeof p[0] === 'bigint' ? 0n : 0];
-  const lc = p[p.length - 1];
+export function normalizeAscending<T extends PolyCoeffs>(p: T, eps = EPS): T {
+  const trimmed: any[] = trimAscending(p, eps);
+  if (trimmed.length === 0) return [typeof p[0] === 'bigint' ? 0n : 0] as T;
+  const lc = trimmed[trimmed.length - 1];
   if (typeof lc === 'bigint') {
-    if (lc === 0n) return [0n];
-    let g = p[0] < 0n ? -p[0] : p[0];
-    for (let i = 1; i < p.length; i++) {
-       const c = p[i] < 0n ? -p[i] : p[i];
+    if (lc === 0n) return [0n] as T;
+    let g = trimmed[0] < 0n ? -trimmed[0] : trimmed[0];
+    for (let i = 1; i < trimmed.length; i++) {
+       const c = trimmed[i] < 0n ? -trimmed[i] : trimmed[i];
        g = g === 0n ? c : gcd(g, c);
     }
-    if (g === 0n) return [0n];
+    if (g === 0n) return [0n] as T;
     const sign = lc < 0n ? -1n : 1n;
-    return p.map(c => (c * sign) / g);
+    return trimmed.map(c => (c * sign) / g) as T;
   }
-  if (Math.abs(lc) <= eps) return [0];
-  return cleanRealCoeffs(p.map(c => c / lc), eps);
+  if (Math.abs(lc) <= eps) return [0] as T;
+  return cleanRealCoeffs(trimmed.map(c => c / lc) as T, eps);
 }
 
-export function cleanRealCoeffs(p, eps = 1e-9) {
+export function cleanRealCoeffs<T extends PolyCoeffs>(p: T, eps = 1e-9): T {
   if (p.length > 0 && typeof p[0] === 'bigint') return trimAscending(p);
-  return trimAscending(p.map(c => {
+  return trimAscending((p as any[]).map(c => {
     if (Math.abs(c) < eps) return 0;
     const r = Math.round(c);
     return Math.abs(c - r) < eps ? r : c;
-  }), eps);
+  }) as T, eps);
 }
 
 export function addPoly(p, q) {

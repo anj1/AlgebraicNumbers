@@ -1,6 +1,6 @@
 # algebraic-numbers
 
-A JavaScript port of the Julia `AlgebraicNumber` prototype using `BigInt` for exact polynomials and `Float64` for numerical approximations. It represents an algebraic number as:
+A TypeScript port of the Julia [`AlgebraicNumbers`](https://github.com/anj1/AlgebraicNumbers.jl) prototype using `BigInt` for exact polynomials and `Float64` for numerical approximations. It represents an algebraic number as:
 
 - `coeff`: ascending polynomial coefficients represented as `BigInt`s, e.g. `[-2n, 0n, 1n]` for `x^2 - 2`
 - `apprx`: a selected complex Float64 approximation of the intended root
@@ -17,7 +17,7 @@ npm install
 Dependencies:
 
 - `flo-poly` for real polynomial root isolation / solving
-- `algebraic-numbers` for symbolic polynomial factorization
+- `algebrite` for symbolic polynomial factorization
 
 ## Run tests
 
@@ -27,7 +27,7 @@ npm test
 
 ## Usage
 
-```js
+```ts
 import { AlgebraicNumber, sqrt, algRoots, cosAlg } from 'algebraic-numbers';
 
 const two = AlgebraicNumber.from(2);
@@ -47,7 +47,7 @@ console.log(cosAlg(1, 3).apprx.re); // cos(pi / 3) = 0.5
 
 The public polynomial convention follows the Julia code: coefficients are ascending by degree.
 
-```js
+```ts
 [-6n, 11n, -6n, 1n] // -6 + 11x - 6x^2 + x^3
 ```
 

@@ -8,11 +8,16 @@
     ".": "./src/index.js"
   },
   "scripts": {
-    "test": "node --test"
+    "test": "node --import tsx --test test/**/*.test.ts",
+    "build": "tsc"
   },
   "dependencies": {
     "algebrite": "^1.4.0",
     "flo-poly": "^7.0.2"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@types/node": "^25.6.2",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3"
+  }
 }

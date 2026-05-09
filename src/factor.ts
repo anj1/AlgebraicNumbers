@@ -10,7 +10,7 @@ import {
   syntheticDivideByLinear,
   trimAscending,
   allRealRootsAscending
-} from './poly.js';
+} from './poly.ts';
 
 const EPS = 1e-8;
 
