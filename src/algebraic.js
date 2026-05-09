@@ -13,13 +13,13 @@ import {
   samePolynomialUpToScale,
   trimAscending
 } from './poly.js';
-import { factorPolynomial } from './factor.js';
+import { factorPolynomial, rationalApprox } from './factor.js';
 
 const EPS = 1e-8;
 
 export class AlgebraicNumber {
   constructor(coeff, apprx, opts = {}) {
-    this.coeff = cleanRealCoeffs(trimAscending(coeff), opts.eps ?? EPS);
+    this.coeff = normalizeAscending(coeff, opts.eps ?? EPS);
     this.apprx = Complex.from(apprx);
     this.prec = opts.prec ?? calcPrecision(this.coeff);
 
@@ -42,17 +42,20 @@ export class AlgebraicNumber {
       if (Math.abs(z.im) < EPS) return AlgebraicNumber.from(z.re);
       return AlgebraicNumber.from(z.re).add(AlgebraicNumber.from(z.im).mul(AlgebraicNumber.i()));
     }
-    if (typeof x === 'number') return new AlgebraicNumber([-x, 1], C(x, 0));
+    if (typeof x === 'number') {
+       const r = rationalApprox(x, 1e8, 1e-10) || { num: Math.round(x * 1e8), den: 1e8 };
+       return new AlgebraicNumber([-BigInt(r.num), BigInt(r.den)], C(x, 0));
+    }
+    if (typeof x === 'bigint') return new AlgebraicNumber([-x, 1n], C(Number(x), 0));
     throw new TypeError(`Cannot convert ${x} to AlgebraicNumber`);
   }
 
   static rational(num, den = 1) {
-    if (!Number.isFinite(num) || !Number.isFinite(den) || den === 0) throw new RangeError('invalid rational');
-    return new AlgebraicNumber([-num, den], C(num / den, 0));
+    return new AlgebraicNumber([-BigInt(num), BigInt(den)], C(Number(num) / Number(den), 0));
   }
 
-  static zero() { return AlgebraicNumber.raw([0, 1], C(0, 0), 1); }
-  static one() { return AlgebraicNumber.raw([-1, 1], C(1, 0), 1); }
+  static zero() { return AlgebraicNumber.raw([0n, 1n], C(0, 0), 1); }
+  static one() { return AlgebraicNumber.raw([-1n, 1n], C(1, 0), 1); }
   static i() { return root(AlgebraicNumber.from(-1), 2); }
 
   degree() { return degree(this.coeff); }
@@ -105,7 +108,7 @@ export class AlgebraicNumber {
   }
 
   imagPart() {
-    return this.sub(this.conj()).mul(AlgebraicNumber.raw([1, 0, 4], C(0, -0.5), 0.5));
+    return this.sub(this.conj()).mul(AlgebraicNumber.raw([1n, 0n, 4n], C(0, -0.5), 0.5));
   }
 
   root(n) { return root(this, n); }
@@ -157,12 +160,22 @@ export function pow2(x) {
   const an = AlgebraicNumber.from(x);
   const cfs = an.coeff;
   let p2;
-  if (cfs.slice(1).filter((_, idx) => idx % 2 === 0).every(c => Math.abs(c) < EPS)) {
+  const isBig = typeof cfs[0] === 'bigint';
+  const zero = isBig ? 0n : 0;
+  if (cfs.slice(1).filter((_, idx) => idx % 2 === 0).every(c => c === zero || Math.abs(Number(c)) < EPS)) {
     // p(x) = q(x^2), so q is obtained by taking the even-power coefficients.
     p2 = cfs.filter((_, i) => i % 2 === 0);
   } else {
     // Numeric Float64 equivalent of eliminating x from y = x^2 and p(x) = 0.
-    p2 = polyFromRoots(rootsAscending(cfs).map(r => r.mul(r)));
+    let f = polyFromRoots(rootsAscending(cfs).map(r => r.mul(r)));
+    if (isBig) {
+       const lc1 = BigInt(cfs[cfs.length - 1]);
+       const lc = lc1 ** BigInt(degree(cfs));
+       const numLc = Number(lc);
+       p2 = normalizeAscending(f.map(c => BigInt(Math.round(c * numLc))));
+    } else {
+       p2 = f;
+    }
   }
   return new AlgebraicNumber(p2, an.apprx.mul(an.apprx));
 }

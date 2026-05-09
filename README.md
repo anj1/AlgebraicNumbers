@@ -1,8 +1,8 @@
 # algebraic-numbers
 
-A Float64 JavaScript port of the Julia `AlgebraicNumber` prototype. It represents an algebraic number as:
+A JavaScript port of the Julia `AlgebraicNumber` prototype using `BigInt` for exact polynomials and `Float64` for numerical approximations. It represents an algebraic number as:
 
-- `coeff`: ascending polynomial coefficients, e.g. `[-2, 0, 1]` for `x^2 - 2`
+- `coeff`: ascending polynomial coefficients represented as `BigInt`s, e.g. `[-2n, 0n, 1n]` for `x^2 - 2`
 - `apprx`: a selected complex Float64 approximation of the intended root
 - `prec`: half the minimum separation between roots of `coeff`
 
@@ -33,11 +33,11 @@ import { AlgebraicNumber, sqrt, algRoots, cosAlg } from 'algebraic-numbers';
 const two = AlgebraicNumber.from(2);
 const s2 = sqrt(two);
 
-console.log(s2.coeff);       // [-2, 0, 1], i.e. x^2 - 2
+console.log(s2.coeff);       // [-2n, 0n, 1n], i.e. x^2 - 2
 console.log(s2.apprx.re);    // 1.4142135623730951
 console.log(s2.mul(s2).equals(two)); // true
 
-const roots = algRoots([-6, 11, -6, 1]); // x^3 - 6x^2 + 11x - 6
+const roots = algRoots([-6n, 11n, -6n, 1n]); // x^3 - 6x^2 + 11x - 6
 console.log(roots.map(r => r.apprx.re)); // approximately [1, 2, 3]
 
 console.log(cosAlg(1, 3).apprx.re); // cos(pi / 3) = 0.5
@@ -48,7 +48,7 @@ console.log(cosAlg(1, 3).apprx.re); // cos(pi / 3) = 0.5
 The public polynomial convention follows the Julia code: coefficients are ascending by degree.
 
 ```js
-[-6, 11, -6, 1] // -6 + 11x - 6x^2 + x^3
+[-6n, 11n, -6n, 1n] // -6 + 11x - 6x^2 + x^3
 ```
 
 `flo-poly` expects descending coefficients internally, so this package converts before calling it.

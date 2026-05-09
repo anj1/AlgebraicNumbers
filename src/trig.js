@@ -19,13 +19,13 @@ function normalizeRational(num, den = 1) {
 
 export function cyclotomicPolynomial(n) {
   if (!Number.isInteger(n) || n < 1) throw new RangeError('n must be a positive integer');
-  if (n === 1) return [-1, 1];
-  let p = Array(n + 1).fill(0);
-  p[0] = -1;
-  p[n] = 1;
+  if (n === 1) return [-1n, 1n];
+  let p = Array(n + 1).fill(0n);
+  p[0] = -1n;
+  p[n] = 1n;
   for (const d of divisors(n).filter(d => d < n)) {
     const { quotient, remainder } = divPolyExact(p, cyclotomicPolynomial(d), 1e-7);
-    if (remainder.some(c => Math.abs(c) > 1e-6)) throw new Error(`failed cyclotomic division for n=${n}, d=${d}`);
+    if (remainder.some(c => c !== 0n)) throw new Error(`failed cyclotomic division for n=${n}, d=${d}`);
     p = quotient;
   }
   return normalizeAscending(p);

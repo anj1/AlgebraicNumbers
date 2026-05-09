@@ -17,16 +17,18 @@ const EPS = 1e-8;
 export function polynomialToalgebriteExpr(p, variable = 'x') {
   p = trimAscending(p);
   if (p.length === 1) return String(p[0]);
+  const isBig = typeof p[0] === 'bigint';
   const terms = [];
   for (let i = p.length - 1; i >= 0; i--) {
     const c = p[i];
-    if (Math.abs(c) < EPS) continue;
-    const sign = c < 0 ? '-' : '+';
-    const a = Math.abs(c);
+    if (!isBig && Math.abs(c) < EPS) continue;
+    if (isBig && c === 0n) continue;
+    const sign = c < (isBig ? 0n : 0) ? '-' : '+';
+    const a = isBig ? (c < 0n ? -c : c) : Math.abs(c);
     let body;
-    if (i === 0) body = formatNumber(a);
-    else if (i === 1) body = a === 1 ? variable : `${formatNumber(a)}*${variable}`;
-    else body = a === 1 ? `${variable}^${i}` : `${formatNumber(a)}*${variable}^${i}`;
+    if (i === 0) body = isBig ? String(a) : formatNumber(a);
+    else if (i === 1) body = a === (isBig ? 1n : 1) ? variable : `${isBig ? String(a) : formatNumber(a)}*${variable}`;
+    else body = a === (isBig ? 1n : 1) ? `${variable}^${i}` : `${isBig ? String(a) : formatNumber(a)}*${variable}^${i}`;
     terms.push({ sign, body });
   }
   if (terms.length === 0) return '0';
@@ -141,7 +143,7 @@ function parsePolynomialExpression(input, variable = 'x') {
     while (peek() === '+' || peek() === '-') {
       const op = tokens[pos++];
       const rhs = parseTerm();
-      acc = op === '+' ? addPoly(acc, rhs) : addPoly(acc, rhs.map(c => -c));
+      acc = op === '+' ? addPoly(acc, rhs) : addPoly(acc, rhs.map(c => typeof c === 'bigint' ? -c : -c));
     }
     return acc;
   }
@@ -156,9 +158,10 @@ function parsePolynomialExpression(input, variable = 'x') {
     let base = parseUnary();
     if (take('^')) {
       const e = tokens[pos++];
-      if (typeof e !== 'number' || !Number.isInteger(e) || e < 0) throw new Error('polynomial exponents must be non-negative integers');
-      let acc = [1];
-      for (let i = 0; i < e; i++) acc = mulPoly(acc, base);
+      const numE = Number(e);
+      if (!Number.isInteger(numE) || numE < 0) throw new Error('polynomial exponents must be non-negative integers');
+      let acc = [typeof base[0] === 'bigint' ? 1n : 1];
+      for (let i = 0; i < numE; i++) acc = mulPoly(acc, base);
       base = acc;
     }
     return base;
@@ -166,14 +169,14 @@ function parsePolynomialExpression(input, variable = 'x') {
 
   function parseUnary() {
     if (take('+')) return parseUnary();
-    if (take('-')) return parseUnary().map(c => -c);
+    if (take('-')) return parseUnary().map(c => typeof c === 'bigint' ? -c : -c);
     return parsePrimary();
   }
 
   function parsePrimary() {
     const t = tokens[pos++];
-    if (typeof t === 'number') return [t];
-    if (t === variable) return [0, 1];
+    if (typeof t === 'number' || typeof t === 'bigint') return [t];
+    if (t === variable) return [0n, 1n];
     if (t === '(') {
       const e = parseExpr();
       if (!take(')')) throw new Error('missing )');
@@ -200,9 +203,9 @@ function tokenize(s, variable) {
         if ((s[j] === '+' || s[j] === '-') && !/[eE]/.test(s[j - 1])) break;
         j++;
       }
-      const num = Number(s.slice(i, j));
-      if (!Number.isFinite(num)) throw new Error(`bad number ${s.slice(i, j)}`);
-      tokens.push(num);
+      const str = s.slice(i, j);
+      if (/^\d+$/.test(str)) tokens.push(BigInt(str));
+      else tokens.push(Number(str));
       i = j;
       continue;
     }
@@ -211,7 +214,7 @@ function tokenize(s, variable) {
   return tokens;
 }
 
-function rationalApprox(x, maxDen = 256, eps = 1e-8) {
+export function rationalApprox(x, maxDen = 256, eps = 1e-8) {
   let best = null;
   for (let q = 1; q <= maxDen; q++) {
     const p = Math.round(x * q);
@@ -225,6 +228,7 @@ function factorByRationalRoots(p) {
   let residual = normalizeAscending(p);
   const factors = [];
   let changed = true;
+  const isBig = typeof p[0] === 'bigint';
 
   while (changed && degree(residual) > 1) {
     changed = false;
@@ -241,10 +245,26 @@ function factorByRationalRoots(p) {
     for (const r of candidates) {
       const { quotient, remainder } = syntheticDivideByLinear(residual, r);
       if (Math.abs(remainder) < 1e-6) {
-        factors.push(cleanRealCoeffs([-r, 1]));
-        residual = normalizeAscending(quotient);
-        changed = true;
-        break;
+        if (isBig) {
+           const approxRoot = rationalApprox(r);
+           if (approxRoot) {
+              const factor = [-BigInt(approxRoot.num), BigInt(approxRoot.den)];
+              try {
+                const { quotient: qBig, remainder: rBig } = divPolyExact(residual, factor);
+                if (rBig.length === 1 && rBig[0] === 0n) {
+                   factors.push(normalizeAscending(factor));
+                   residual = normalizeAscending(qBig);
+                   changed = true;
+                   break;
+                }
+              } catch (e) {}
+           }
+        } else {
+           factors.push(cleanRealCoeffs([-r, 1]));
+           residual = normalizeAscending(quotient);
+           changed = true;
+           break;
+        }
       }
     }
   }

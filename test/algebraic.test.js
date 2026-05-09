@@ -28,12 +28,12 @@ test('flo-poly real roots are wired with ascending coefficients', () => {
 
 test('constructs rational/integer algebraic numbers', () => {
   const a = AlgebraicNumber.from(7);
-  assert.deepEqual(a.coeff, [-7, 1]);
+  assert.deepEqual(a.coeff, [-7n, 1n]);
   nearComplex(a.apprx, 7, 0);
 
   const b = AlgebraicNumber.rational(3, 4);
   nearComplex(b.apprx, 0.75, 0);
-  assert.ok(samePolynomialUpToScale(b.coeff, [-0.75, 1]));
+  assert.ok(samePolynomialUpToScale(b.coeff, [-3n, 4n]));
 });
 
 test('adds, multiplies, divides', () => {
@@ -51,17 +51,17 @@ test('adds, multiplies, divides', () => {
 test('radicals preserve selected root and simplify reducible cases', () => {
   const s2 = sqrt(AlgebraicNumber.from(2));
   nearComplex(s2.apprx, Math.SQRT2);
-  assert.ok(samePolynomialUpToScale(s2.coeff, [-2, 0, 1]));
+  assert.ok(samePolynomialUpToScale(s2.coeff, [-2n, 0n, 1n]));
 
   const s4 = sqrt(AlgebraicNumber.from(4));
   nearComplex(s4.apprx, 2);
-  assert.ok(samePolynomialUpToScale(s4.coeff, [-2, 1]));
+  assert.ok(samePolynomialUpToScale(s4.coeff, [-2n, 1n]));
 });
 
 test('complex algebraic number i squares to -1', () => {
   const i = root(AlgebraicNumber.from(-1), 2);
   nearComplex(i.apprx, 0, 1);
-  assert.ok(samePolynomialUpToScale(i.coeff, [1, 0, 1]));
+  assert.ok(samePolynomialUpToScale(i.coeff, [1n, 0n, 1n]));
 
   const minusOne = i.mul(i);
   nearComplex(minusOne.apprx, -1, 0);

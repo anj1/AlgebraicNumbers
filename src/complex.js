@@ -9,6 +9,7 @@ export class Complex {
   static from(x) {
     if (x instanceof Complex) return x;
     if (typeof x === 'number') return new Complex(x, 0);
+    if (typeof x === 'bigint') return new Complex(Number(x), 0);
     if (x && typeof x.re === 'number' && typeof x.im === 'number') return new Complex(x.re, x.im);
     throw new TypeError(`Cannot convert ${x} to Complex`);
   }
